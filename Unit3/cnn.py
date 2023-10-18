@@ -3,6 +3,7 @@ from random import shuffle
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 ...
 # import torchvision and other necessary modules from torchvision
 import torchvision
@@ -35,8 +36,8 @@ test_set, train_set = torch.utils.data.random_split(dataset, [0.2, 0.8], generat
 
 # model hyperparameter
 learning_rate = 0.01
-batch_size = 500
-epoch_size = 10
+batch_size = 300
+epoch_size = 20
 
 
 # Removed because it was taken care of by the random split
@@ -75,12 +76,12 @@ class CNN(nn.Module):
         
 
     def forward(self, x):
-        x = self.pool(self.relu(self.conv1(x)))
-        x = self.pool(self.relu(self.conv2(x)))
-        x = self.pool(self.relu(self.conv3(x)))
-        x = x.view(x.size(0), -1)
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        x = torch.flatten(x,1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
@@ -96,10 +97,9 @@ optimizer = optim.Adam(cnn.parameters(), lr = learning_rate)
 # start model training
 cnn.train() # turn on train mode, this is a good practice to do
 for epoch in range(epoch_size): # begin with trying 10 epochs
-
+    print("Epoch: ", epoch)
     loss = 0.0 # you can print out average loss per batch every certain batches
-    i = 0
-    for data in trainloader:
+    for i,data in enumerate(trainloader,0):
         # get the inputs and label from dataloader
         inputs,labels = data[0], data[1]
         
@@ -116,11 +116,9 @@ for epoch in range(epoch_size): # begin with trying 10 epochs
 
         # print some statistics
         loss += loss.item()# add loss for current batch
-        if i > 100:    # print out average loss every 100 batches
-            print(f'[{epoch + 1}, {i + 1:5d}] loss: {loss / 100:.3f}')
+        if i%10 ==9:    # print out average loss every 10 batches
+            print(f'[{epoch + 1}, {i + 1:5d}] loss: {loss / 10:.3f}')
             loss = 0.0
-            i=0
-        i+=1
 
 print('Finished Training')
 
